@@ -1,0 +1,29 @@
+{
+  "name": "Lykke.Service.Steem.SignService",
+  "version": "1.0.0",
+  "description": "STEEM blockchain integration, signing API",
+  "main": "./build/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Lykke",
+  "license": "ISC",
+  "dependencies": {
+    "@types/bytebuffer": "^5.0.37",
+    "@types/koa": "^2.0.46",
+    "@types/koa-bodyparser": "^4.2.0",
+    "@types/koa-router": "^7.0.30",
+    "@types/node": "^10.3.6",
+    "@types/uuid": "^3.4.3",
+    "axios": "^0.18.0",
+    "dsteem": "^0.9.0",
+    "koa": "^2.5.1",
+    "koa-bodyparser": "^4.2.1",
+    "koa-multer": "^1.0.2",
+    "koa-router": "^7.4.0",
+    "reflect-metadata": "^0.1.12",
+    "routing-controllers": "^0.7.7",
+    "typedi": "^0.7.3",
+    "uuid": "^3.2.1"
+  }
+}
