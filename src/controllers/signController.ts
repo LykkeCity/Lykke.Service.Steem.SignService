@@ -1,7 +1,8 @@
 import { JsonController, Body, Post, BadRequestError } from "routing-controllers";
 import { IsArray, IsString, IsNotEmpty, IsBase64 } from "class-validator";
-import { Client, PrivateKey, ClientOptions, Transaction } from "dsteem"
 import { fromBase64, toBase64, Settings } from "../common";
+
+const steem = require("steem");
 
 class SignTransactionRequest {
 
@@ -21,8 +22,8 @@ class SignTransactionResponse {
 }
 
 class TransactionContext {
-    options: ClientOptions;
-    tx: Transaction;
+    config: any;
+    tx: any;
 }
 
 @JsonController("/sign")
@@ -32,7 +33,7 @@ export class SignController {
     }
 
     /**
-     * Signs transaction with provided private keys or/and with hot wallet private key, if necessary.
+     * Signs transaction with provided private keys.
      * @param request Private keys and data of transaction to sign.
      */
     @Post()
@@ -40,19 +41,13 @@ export class SignController {
 
         // context actually is a disassembled transaction
         const ctx = fromBase64<TransactionContext>(request.transactionContext);
-        
-        // extract private keys
-        let privateKeys: PrivateKey[] = [];
-        try {
-            privateKeys = request.privateKeys.map(k => PrivateKey.from(k));
-        } catch (e) {
-            throw new BadRequestError("Invalid private key(s)");
-        }
 
         // for real transactions real privite keys are required;
         // for simulated transactions (i.e. DW -> HW) we don't have any real action, 
         // but we protect such activities with HW private key
-        if (!privateKeys.length || (!ctx.tx && privateKeys.some(k => k.createPublic().toString() != this.settings.SteemSignService.HotWalletActivePublicKey))) {
+        if (!request.privateKeys.length ||
+            !request.privateKeys.every(k => steem.auth.isWif(k)) ||
+            (!ctx.tx && request.privateKeys.some(k => !steem.auth.wifIsValid(k, this.settings.SteemSignService.HotWalletActivePublicKey)))) {
             throw new BadRequestError("Invalid private key(s)");
         }
 
@@ -63,8 +58,21 @@ export class SignController {
             }));
         }
 
-        const client = new Client(undefined, ctx.options);
-        const signed = client.broadcast.sign(ctx.tx, privateKeys);
+        // configure steem-js
+        for (const key in ctx.config) {
+            if (ctx.config.hasOwnProperty(key)) {
+                steem.config.set(key, ctx.config[key]);
+            }
+        }
+
+        // convert array of keys to object
+        const privateKeys = request.privateKeys.reduce((p: any, c, i) => {
+            p[i] = c;
+            return p;
+        }, {});
+
+        // sign transaction
+        const signed = steem.auth.signTransaction(ctx.tx, privateKeys);
 
         return new SignTransactionResponse(toBase64(signed));
     }
