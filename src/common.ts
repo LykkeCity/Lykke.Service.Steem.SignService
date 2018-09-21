@@ -1,6 +1,8 @@
+import { Container } from "typedi";
 import axios from "axios";
 import fs from "fs";
 import util from "util";
+import * as appInsights from "applicationinsights";
 
 const pkg = require("../package.json");
 
@@ -55,4 +57,26 @@ export async function loadSettings(): Promise<Settings> {
     } else {
         return JSON.parse(await util.promisify(fs.readFile)(process.env.SettingsUrl, Encoding.utf8)) as Settings;
     }
+}
+
+export function startAppInsights() {
+    if (!process.env["APPINSIGHTS_INSTRUMENTATIONKEY"]) {
+        console.warn("APPINSIGHTS_INSTRUMENTATIONKEY is not provided");
+        return;
+    }
+
+    // init with default configuration
+    appInsights.setup()
+        .setAutoDependencyCorrelation(true)
+        .setAutoCollectRequests(true)
+        .setAutoCollectPerformance(true)
+        .setAutoCollectExceptions(true)
+        .setAutoCollectDependencies(true)
+        .setAutoCollectConsole(true)
+        .setUseDiskRetryCaching(true)
+        .start();
+
+    // register client in DI container
+    // so it could be used by services
+    Container.set(appInsights.TelemetryClient, appInsights.defaultClient);
 }

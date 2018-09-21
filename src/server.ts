@@ -1,10 +1,13 @@
 import "reflect-metadata";
 import { Container } from "typedi";
 import { createKoaServer, useContainer } from "routing-controllers";
-import { loadSettings, Settings } from "./common";
+import { loadSettings, Settings, startAppInsights } from "./common";
 
-// DI initialization for routing-controllers must go first, before any aother action 
+// DI initialization for routing-controllers
+// must go first, before any other action 
 useContainer(Container);
+
+startAppInsights();
 
 loadSettings()
     .then(settings => {
