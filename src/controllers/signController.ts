@@ -51,29 +51,29 @@ export class SignController {
             throw new BadRequestError("Invalid private key(s)");
         }
 
-        // for simulated transactions we use timestamp as tx ID
-        if (!ctx.tx) {
+        if (!!ctx.tx) {
+            // configure steem-js
+            for (const key in ctx.config) {
+                if (ctx.config.hasOwnProperty(key)) {
+                    steem.config.set(key, ctx.config[key]);
+                }
+            }
+
+            // convert array of keys to object
+            const privateKeys = request.privateKeys.reduce((p: any, c, i) => {
+                p[i] = c;
+                return p;
+            }, {});
+
+            // sign transaction
+            const signedTransaction = steem.auth.signTransaction(ctx.tx, privateKeys);
+
+            return new SignTransactionResponse(toBase64(signedTransaction));
+        } else {
+            // for simulated transactions we use timestamp as tx ID
             return new SignTransactionResponse(toBase64({
                 txId: Date.now().toFixed()
             }));
         }
-
-        // configure steem-js
-        for (const key in ctx.config) {
-            if (ctx.config.hasOwnProperty(key)) {
-                steem.config.set(key, ctx.config[key]);
-            }
-        }
-
-        // convert array of keys to object
-        const privateKeys = request.privateKeys.reduce((p: any, c, i) => {
-            p[i] = c;
-            return p;
-        }, {});
-
-        // sign transaction
-        const signed = steem.auth.signTransaction(ctx.tx, privateKeys);
-
-        return new SignTransactionResponse(toBase64(signed));
     }
 }
