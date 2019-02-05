@@ -70,10 +70,8 @@ export class SignController {
 
             return new SignTransactionResponse(toBase64(signedTransaction));
         } else {
-            // for simulated transactions we use timestamp as tx ID
-            return new SignTransactionResponse(toBase64({
-                txId: Date.now().toFixed()
-            }));
+            // for simulated transactions we will use operation ID as tx ID
+            return new SignTransactionResponse(toBase64({}));
         }
     }
 }
